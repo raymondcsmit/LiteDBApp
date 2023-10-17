@@ -1,5 +1,10 @@
 ﻿using LiteDBApp.DB;
+using LiteDBApp.IdentityStore;
 using LiteDBApp.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace LiteDBApp
 {
@@ -17,11 +22,36 @@ namespace LiteDBApp
 		{
 			services.AddControllers();
 			services.Configure<LiteDbOptions>(Configuration.GetSection("LiteDbOptions"));
+			services.AddIdentity<LiteDbUser, LiteDbRole>()
+					.AddUserStore<LiteDbUserStore>()
+					.AddRoleStore<LiteDbRoleStore>()
+					.AddDefaultTokenProviders();
 
 
 			services.AddSingleton<ILiteDbContext, LiteDbContext>();
-			services.AddScoped(typeof(ILiteDbRepository<>), typeof(LiteDbRepository<>));
+			services.AddScoped(typeof(ILiteDbRepository<>), typeof(IdentityRepository<>));
 			services.AddScoped<UserService>();
+
+
+			var jwtSettings = Configuration.GetSection("JwtSettings");
+			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]));
+			var tokenValidationParameters = new TokenValidationParameters
+			{
+				ValidateIssuer = true,
+				ValidateAudience = true,
+				ValidateLifetime = true,
+				ValidateIssuerSigningKey = true,
+				ValidIssuer = jwtSettings["Issuer"],
+				ValidAudience = jwtSettings["Audience"],
+				IssuerSigningKey = key,
+			};
+
+			services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+				.AddJwtBearer(options =>
+				{
+					options.TokenValidationParameters = tokenValidationParameters;
+				});
+
 			// Add Swagger services
 			services.AddEndpointsApiExplorer();
 			services.AddSwaggerGen();
