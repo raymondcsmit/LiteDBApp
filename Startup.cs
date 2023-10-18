@@ -28,13 +28,21 @@ namespace LiteDBApp
 					.AddDefaultTokenProviders();
 
 
+
 			services.AddSingleton<ILiteDbContext, LiteDbContext>();
-			services.AddScoped(typeof(ILiteDbRepository<>), typeof(IdentityRepository<>));
+			services.AddScoped(typeof(ILiteDbRepository<>), typeof(LiteDbRepository<>));
+			services.AddScoped(typeof(IIdentityRepository<>), typeof(IdentityRepository<>));
 			services.AddScoped<UserService>();
 
 
 			var jwtSettings = Configuration.GetSection("JwtSettings");
+			var secret = jwtSettings["Secret"];
+			if (Encoding.UTF8.GetByteCount(secret) * 8 < 256)
+			{
+				throw new Exception("The key size is smaller than the minimum required size of 256 bits.");
+			}
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]));
+
 			var tokenValidationParameters = new TokenValidationParameters
 			{
 				ValidateIssuer = true,

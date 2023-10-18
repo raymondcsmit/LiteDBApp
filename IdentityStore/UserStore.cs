@@ -5,7 +5,7 @@
 	using System.Threading;
 	using System.Threading.Tasks;
 
-	public class LiteDbUserStore : IUserStore<LiteDbUser>
+	public class LiteDbUserStore : IUserStore<LiteDbUser>, IUserPasswordStore<LiteDbUser>
 	{
 		private readonly IIdentityRepository<LiteDbUser> _userRepository;
 
@@ -50,6 +50,8 @@
 			return Task.FromResult(user.NormalizedUserName);
 		}
 
+
+
 		public Task<string> GetUserIdAsync(LiteDbUser user, CancellationToken cancellationToken)
 		{
 			// Implement the logic to get the user's ID
@@ -61,14 +63,45 @@
 			// Implement the logic to get the username
 			return Task.FromResult(user.UserName);
 		}
+		public Task<string> GetPasswordHashAsync(LiteDbUser user, CancellationToken cancellationToken)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			if (user == null)
+			{
+				throw new ArgumentNullException(nameof(user));
+			}
 
+			return Task.FromResult(user.PasswordHash);
+		}
+
+		public Task<bool> HasPasswordAsync(LiteDbUser user, CancellationToken cancellationToken)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			if (user == null)
+			{
+				throw new ArgumentNullException(nameof(user));
+			}
+
+			return Task.FromResult(!string.IsNullOrEmpty(user.PasswordHash));
+		}
+
+		public Task SetPasswordHashAsync(LiteDbUser user, string passwordHash, CancellationToken cancellationToken)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			if (user == null)
+			{
+				throw new ArgumentNullException(nameof(user));
+			}
+
+			user.PasswordHash = passwordHash;
+			return Task.CompletedTask;
+		}
 		public Task SetNormalizedUserNameAsync(LiteDbUser user, string normalizedName, CancellationToken cancellationToken)
 		{
 			// Implement the logic to set the normalized username
 			user.NormalizedUserName = normalizedName;
 			return Task.CompletedTask;
 		}
-
 		public Task SetUserNameAsync(LiteDbUser user, string userName, CancellationToken cancellationToken)
 		{
 			// Implement the logic to set the username
